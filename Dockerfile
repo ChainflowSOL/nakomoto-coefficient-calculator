@@ -16,6 +16,7 @@ FROM alpine:3
 ARG GITHUB_SHA=local
 ENV GITHUB_SHA=${GITHUB_SHA}
 COPY --from=builder /app/nc-calc /usr/local/bin/
+COPY core/utils/keybase_ids.json /app/solana_entities.json
 # Don't run container as root
 ENV USER=xenowits
 ENV UID=1000
