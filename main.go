@@ -56,6 +56,12 @@ func main() {
 			"coefficients": coefficients,
 		})
 	})
+	r.GET("/solana-details", func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.JSON(200, gin.H{
+			"entities": chains.SolanaNakamotoDetails,
+		})
+	})
 	r.Run(":8080") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
 

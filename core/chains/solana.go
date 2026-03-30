@@ -37,14 +37,22 @@ var HardcodedEntityStakes = map[string]float64{
 type EntityOverrideMap map[string][]string
 
 type EntityDetail struct {
-	Rank       int     `json:"rank"`
-	Name       string  `json:"name"`
-	StakeSOL   float64 `json:"stake_sol"`
-	Percent    float64 `json:"percent"`
-	Cumulative float64 `json:"cumulative"`
-	Commission float64 `json:"commission"`
-	SkipRate   float64 `json:"skip_rate"`
-	IsVerified bool    `json:"is_verified"`
+	Rank        int             `json:"rank"`
+	Name        string          `json:"name"`
+	StakeSOL    float64         `json:"stake_sol"`
+	Percent     float64         `json:"percent"`
+	Cumulative  float64         `json:"cumulative"`
+	Commission  float64         `json:"commission"`
+	SkipRate    float64         `json:"skip_rate"`
+	IsVerified  bool            `json:"is_verified"`
+	IsHardcoded bool            `json:"is_hardcoded"`
+	Validators  []ValidatorInfo `json:"validators"`
+}
+
+type ValidatorInfo struct {
+	Pubkey   string  `json:"pubkey"`
+	Moniker  string  `json:"moniker"`
+	StakeSOL float64 `json:"stake_sol"`
 }
 
 var SolanaNakamotoDetails []EntityDetail
@@ -64,6 +72,7 @@ type EntityAggregator struct {
 	WeightedComm *big.Float
 	WeightedSkip *big.Float
 	IsVerified   bool
+	Validators   []ValidatorInfo
 }
 
 // --- HELPER FUNCTIONS ---
@@ -275,6 +284,7 @@ func Solana() (int, error) {
 	// 3. GROUP VALIDATORS BY ENTITY
 	groups := make(map[string]*EntityAggregator)
 	skippedStake := make(map[string]int64) // track how much API stake we skipped for hardcoded entities
+	hardcodedValidators := make(map[string][]ValidatorInfo) // track validators for hardcoded entities (for display)
 
 	for _, ele := range response {
 		if ele.Delinquent {
@@ -301,8 +311,18 @@ func Solana() (int, error) {
 		}
 
 		// Skip validators belonging to hardcoded entities (to avoid double-counting)
+		// But still record them for display purposes
 		if _, isHardcoded := HardcodedEntityStakes[entityID]; isHardcoded {
 			skippedStake[entityID] += ele.Active_stake
+			moniker := ele.Name
+			if moniker == "" {
+				moniker = ele.Account
+			}
+			hardcodedValidators[entityID] = append(hardcodedValidators[entityID], ValidatorInfo{
+				Pubkey:   ele.Pubkey,
+				Moniker:  moniker,
+				StakeSOL: float64(ele.Active_stake) / 1e9,
+			})
 			continue
 		}
 
@@ -312,10 +332,22 @@ func Solana() (int, error) {
 				WeightedComm: big.NewFloat(0),
 				WeightedSkip: big.NewFloat(0),
 				IsVerified:   false,
+				Validators:   []ValidatorInfo{},
 			}
 		}
 
 		groups[entityID].IsVerified = groups[entityID].IsVerified || isManual
+
+		// Track individual validator
+		moniker := ele.Name
+		if moniker == "" {
+			moniker = ele.Account
+		}
+		groups[entityID].Validators = append(groups[entityID].Validators, ValidatorInfo{
+			Pubkey:   ele.Pubkey,
+			Moniker:  moniker,
+			StakeSOL: float64(ele.Active_stake) / 1e9,
+		})
 
 		stake := big.NewInt(ele.Active_stake)
 		stakeFloat := new(big.Float).SetInt(stake)
@@ -333,15 +365,20 @@ func Solana() (int, error) {
 	// 3b. INJECT HARDCODED ENTITIES
 	for entityName, stakeSOL := range HardcodedEntityStakes {
 		stakeLamports := new(big.Int).SetUint64(uint64(stakeSOL * 1e9))
+		validators := hardcodedValidators[entityName]
+		sort.Slice(validators, func(i, j int) bool {
+			return validators[i].StakeSOL > validators[j].StakeSOL
+		})
 		groups[entityName] = &EntityAggregator{
 			TotalStake:   stakeLamports,
 			WeightedComm: big.NewFloat(0),
 			WeightedSkip: big.NewFloat(0),
 			IsVerified:   true,
+			Validators:   validators,
 		}
 		skippedLamports := skippedStake[entityName]
-		log.Printf("💎 Hardcoded %s: %.2fM SOL (replaced %.2fM SOL detected from API)",
-			entityName, stakeSOL/1e6, float64(skippedLamports)/1e9/1e6)
+		log.Printf("💎 Hardcoded %s: %.2fM SOL (replaced %.2fM SOL detected from API, %d validators tracked)",
+			entityName, stakeSOL/1e6, float64(skippedLamports)/1e9/1e6, len(validators))
 	}
 
 	// 4. PREPARE FINAL LIST
@@ -363,12 +400,21 @@ func Solana() (int, error) {
 			sk, _ = avgSkip.Float64()
 		}
 
+		// Sort validators within entity by stake descending
+		sort.Slice(data.Validators, func(i, j int) bool {
+			return data.Validators[i].StakeSOL > data.Validators[j].StakeSOL
+		})
+
+		_, isHardcoded := HardcodedEntityStakes[name]
+
 		detailsList = append(detailsList, EntityDetail{
-			Name:       name,
-			StakeSOL:   sVal / 1e9,
-			Commission: c,
-			SkipRate:   sk,
-			IsVerified: data.IsVerified,
+			Name:        name,
+			StakeSOL:    sVal / 1e9,
+			Commission:  c,
+			SkipRate:    sk,
+			IsVerified:  data.IsVerified,
+			IsHardcoded: isHardcoded,
+			Validators:  data.Validators,
 		})
 	}
 
