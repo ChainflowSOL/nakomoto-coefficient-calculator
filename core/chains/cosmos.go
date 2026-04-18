@@ -19,8 +19,8 @@ import (
 const BONDED = "BOND_STATUS_BONDED"
 
 func Cosmos() (int, error) {
-	validatorDataURL := "https://rest.cosmos.directory/cosmoshub/cosmos/staking/v1beta1/validators?pagination.limit=500&status=BOND_STATUS_BONDED"
-    stakingPoolURL := "https://rest.cosmos.directory/cosmoshub/cosmos/staking/v1beta1/pool"
+	validatorDataURL := "https://cosmos-api.polkachu.com/cosmos/staking/v1beta1/validators?pagination.limit=500&status=BOND_STATUS_BONDED"
+	stakingPoolURL := "https://cosmos-api.polkachu.com/cosmos/staking/v1beta1/pool"
 
 	return FetchCosmosSDKNakaCoeff("cosmos", validatorDataURL, stakingPoolURL)
 }

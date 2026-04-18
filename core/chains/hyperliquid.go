@@ -23,19 +23,29 @@ type HyperliquidValidator struct {
 
 type HyperliquidResponse []HyperliquidValidator
 
+var hyperliquidClient = http11Client(10 * time.Second)
+
 func Hyperliquid() (int, error) {
 	url := "https://api.hyperliquid.xyz/info"
-	
 	payload := []byte(`{"type": "validatorSummaries"}`)
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
-	if err != nil {
-		return 0, err
-	}
-	req.Header.Set("Content-Type", "application/json")
+	var resp *http.Response
+	var err error
+	for attempt := 0; attempt < 3; attempt++ {
+		req, reqErr := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+		if reqErr != nil {
+			return 0, reqErr
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) Chainflow/nc-calc")
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+		resp, err = hyperliquidClient.Do(req)
+		if err == nil {
+			break
+		}
+		log.Printf("hyperliquid: request attempt %d failed: %v", attempt+1, err)
+		time.Sleep(time.Duration(attempt+1) * 2 * time.Second)
+	}
 	if err != nil {
 		return 0, err
 	}

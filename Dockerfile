@@ -1,5 +1,5 @@
 # Container for building Go binary.
-FROM golang:1.19.3-alpine AS builder
+FROM golang:1.25-alpine AS builder
 # Install dependencies
 RUN apk add --no-cache build-base git
 # Prep and copy source
@@ -18,7 +18,7 @@ ENV GITHUB_SHA=${GITHUB_SHA}
 COPY --from=builder /app/nc-calc /usr/local/bin/
 COPY core/utils/keybase_ids.json /app/solana_entities.json
 # Don't run container as root
-ENV USER=xenowits
+ENV USER=chainflow
 ENV UID=1000
 ENV GID=1000
 RUN addgroup -g "$GID" "$USER"
@@ -30,15 +30,16 @@ RUN adduser \
     --no-create-home \
     --uid "$UID" \
     "$USER"
-RUN chown xenowits /usr/local/bin/nc-calc
+RUN chown chainflow /usr/local/bin/nc-calc
 RUN chmod u+x /usr/local/bin/nc-calc
+RUN mkdir -p /app/data && chown chainflow:chainflow /app/data
 WORKDIR "/opt/$USER"
-USER xenowits
+USER chainflow
 ENTRYPOINT ["/usr/local/bin/nc-calc"]
 CMD ["run"]
 
 # Used by GitHub to associate container with repo.
-LABEL org.opencontainers.image.source="https://github.com/xenowits/nakomoto-coefficient-calculator"
+LABEL org.opencontainers.image.source="https://github.com/ChainflowSOL/nakomoto-coefficient-calculator"
 LABEL org.opencontainers.image.title="nakamoto-coefficient-calculator"
-LABEL org.opencontainers.image.description="Nakomoto coefficient for different blockchains to understand levels of decentralization "
+LABEL org.opencontainers.image.description="Nakamoto coefficient for different blockchains to understand levels of decentralization"
 LABEL org.opencontainers.image.licenses="MIT"

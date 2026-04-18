@@ -2,28 +2,35 @@ package chains
 
 import (
 	"bytes"
-	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
 
+var baseClient = http11Client(10 * time.Second)
+
 func Base() (int, error) {
 	url := "https://mainnet.base.org"
-
 	payload := []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`)
-	
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(payload))
-	if err != nil {
-		return 0, fmt.Errorf("failed to create base request: %v", err)
+	var resp *http.Response
+	var err error
+	for attempt := 0; attempt < 3; attempt++ {
+		req, reqErr := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+		if reqErr != nil {
+			return 0, fmt.Errorf("failed to create base request: %v", reqErr)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) Chainflow/nc-calc")
+
+		resp, err = baseClient.Do(req)
+		if err == nil {
+			break
+		}
+		log.Printf("base: request attempt %d failed: %v", attempt+1, err)
+		time.Sleep(time.Duration(attempt+1) * 2 * time.Second)
 	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("base rpc unreachable: %v", err)
 	}

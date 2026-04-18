@@ -46,13 +46,8 @@ func Graph() (int, error) {
 	// Send req using http Client
 	client := &http.Client{}
 	resp, err := client.Do(req)
-
 	if err != nil {
-		errBody, _ := ioutil.ReadAll(resp.Body)
-		var errResp GraphErrorResponse
-		json.Unmarshal(errBody, &errResp)
-		log.Println(errResp.Error)
-		return 0, err
+		return 0, fmt.Errorf("graph gateway request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -61,10 +56,14 @@ func Graph() (int, error) {
 		return 0, err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("graph gateway returned status %d: %s", resp.StatusCode, string(body[:min(len(body), 200)]))
+	}
+
 	var response GraphResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("graph: parse response: %w (body starts with: %s)", err, string(body[:min(len(body), 120)]))
 	}
 
 	// loop through the validators voting powers

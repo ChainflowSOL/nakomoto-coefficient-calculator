@@ -49,6 +49,10 @@ func Ethereum() (int, error) {
 		return 0, err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("rated api returned status %d: %s", resp.StatusCode, string(body))
+	}
+
 	var response RatedResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {

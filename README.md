@@ -1,76 +1,137 @@
-## Nakamoto Coefficient Calculator
+## Nakaflow — Nakamoto Coefficient Calculator
 
-### AIM
+Live Nakamoto coefficient data for 30+ proof-of-stake blockchains, plus an RSS feed, embeddable badges, and a public JSON API.
 
-The aim of this project is to calculate the nakamoto coefficients for various popular blockchains.
+- Live site: [nakaflow.io](https://nakaflow.io)
+- API docs: [nakaflow.io/docs](https://nakaflow.io/docs)
 
-[Nakamoto coefficient](https://news.earn.com/quantifying-decentralization-e39db233c28e) is a way to calculate the level of decentralization in a particular chain.
+### What is the Nakamoto coefficient?
 
-Read this amazing [messari report](https://messari.io/report/evaluating-validator-decentralization-geographic-and-infrastructure-distribution-in-proof-of-stake-networks) on operational decentralization of Proof-of-stake networks.
+The [Nakamoto coefficient](https://news.earn.com/quantifying-decentralization-e39db233c28e) measures how decentralized a chain is: the minimum number of validators that would need to collude to disrupt consensus. Nakaflow computes it consistently across chains as:
+
+```
+nakamoto-coefficient = number of validators controlling 33% of total network stake
+```
+
+A goroutine refreshes all chains every 6 hours and persists snapshots to a local SQLite history DB.
+
+See also: this [Messari report](https://messari.io/report/evaluating-validator-decentralization-geographic-and-infrastructure-distribution-in-proof-of-stake-networks) on operational decentralization in PoS networks.
 
 #### Disclaimer
 
-Please note that the values should be interpreted with context since the same objective treatment is applied for all the chains included here, ie,
-we simply calculate:
-```markdown
-nakamoto-coefficient: no of validators controlling 33% of the total network stake
+The same 33% threshold is applied to every chain. Some chains use different consensus-critical thresholds (e.g. 50%). Interpret the numbers with that context in mind and cross-verify before drawing conclusions. Feedback welcome on [Discord](https://discord.gg/Una8qmFg).
+
+### Supported chains
+
+Agoric · Algorand · Aptos · Avail · Avalanche · Base · BNB Smart Chain · Cardano · Celestia · Cosmos · Ethereum · Graph Protocol · Hedera · Hype · Juno · Mina · Monad · MultiversX · Namada · Nano · Near · Osmosis · Plume · Polkadot · Polygon · Pulsechain · Regen · Sei · Solana · Stargaze · Story · Sui · Thorchain
+
+### Running locally
+
+Requires Go 1.25+.
+
+```shell
+go run .
 ```
 
-Note that the threshold may be different for some blockchains, for example, 50%.
-So, I would suggest users to understand the context, cross-verify and examine the results. For any feedback, please join this [discord](https://discord.gg/Una8qmFg).
+The server listens on `:8080`. On first run the history DB path defaults to `/app/data/nc_history.db`; if that isn't writable, history is disabled but live endpoints still work.
 
-### Programming Languages
+#### Environment variables
 
-Golang
+| Variable | Purpose |
+|---|---|
+| `SOLANA_API_KEY` | validators.app API key for Solana. [Sign up](https://www.validators.app/users/sign_up?locale=en&network=mainnet). |
+| `RATED_API_KEY` | rated.network API key. |
+| `SUBSCAN_API_KEY` | Subscan API key (Polkadot, Avail). |
+| `NAKAFLOW_BASE_URL` | Public base URL used in RSS links and embed backlinks. Defaults to `https://nakaflow.io`. |
 
-### Steps to run
-1. Build docker image
+### Running with Docker
+
 ```shell
-docker build . --platform=linux/amd64 -t xenowits/nc-calc:v0.1.4
-```
-2. Run the image
-```shell
+docker build . --platform=linux/amd64 -t nakaflow/nc-calc:latest
+
 docker run --rm \
--e "SOLANA_API_KEY=<YOUR_SOLANA_API_KEY_HERE>" \
--e "RATED_API_KEY=<YOUR_RATED_API_KEY_HERE>" \
--p 8080:8080 xenowits/nc-calc:v0.1.4
+  -e SOLANA_API_KEY=... \
+  -e RATED_API_KEY=... \
+  -e SUBSCAN_API_KEY=... \
+  -p 8080:8080 nakaflow/nc-calc:latest
 ```
 
-NOTE: You can get your API Key by signing up [here](https://www.validators.app/users/sign_up?locale=en&network=mainnet).
+Or bring up server + frontend together:
 
-### Chains currently supported
+```shell
+docker compose up
+```
 
-1. [Agoric](https://agoric.com/)
-2. [Aptos](https://aptosfoundation.org/)
-3. [Avail](https://www.availproject.org/)
-4. [Avalanche](https://www.avax.network/)
-5. [BNB Smart Chain](https://www.bnbchain.org)
-6. [Cardano](https://cardano.org/)
-7. [Celestia](https://celestia.org/)
-8. [Cosmos](https://cosmos.network/)
-9. [Graph Protocol](https://thegraph.com/)
-10. [Hedera](https://hedera.com/)
-11. [Juno](https://www.junonetwork.io/)
-12. [Mina](https://minaprotocol.com/)
-13. [MultiversX](https://multiversx.com/)
-14. [Nano](https://nano.org/)
-15. [Near](https://near.org/)
-16. [Osmosis Zone](https://osmosis.zone/)
-17. [Polygon](https://polygon.technology/)
-18. [Polkadot](https://polkadot.network/)
-19. [Pulsechain](https://pulsechain.com/)
-20. [Regen Network](https://www.regen.network/)
-21. [Sei](https://sei.io/)
-22. [Solana](https://solana.com/)
-23. [Stargaze](https://stargaze.zone/)
-24. [Sui](https://sui.io/)
-25. [Terra](https://www.terra.money/)
-26. [Thorchain](https://www.thorchain.com/)
+### API & Embeds
 
-### Notes
+All endpoints are public, CORS-enabled (`*`), and served from `https://nakaflow.io`. Interactive reference: [`/docs`](https://nakaflow.io/docs). Machine-readable spec: [`/openapi.json`](https://nakaflow.io/openapi.json).
 
-The actual logic is present inside `/core`. A goroutine runs every 6 hours which updates the nakamoto coefficients for all the chains.
+#### JSON API
 
-### Future Work
+| Endpoint | Description |
+|---|---|
+| `GET /naka-coeffs` | Current Nakamoto coefficient for every supported chain. |
+| `GET /nc-history?chain={token}&days={n}` | Historical snapshots. `chain` optional; `days` defaults to 30 when omitted. |
+| `GET /solana-details` | Per-entity breakdown of Solana's coefficient. |
 
-To add support for multiple other chains in `/v1`.
+```bash
+curl https://nakaflow.io/naka-coeffs
+curl "https://nakaflow.io/nc-history?chain=SOL&days=90"
+```
+
+#### RSS feed
+
+`GET /feed.xml` — RSS 2.0 feed, one item per chain. Chains with recent changes are prioritized first. Wire it into any RSS reader, Zapier, or newsletter tool.
+
+```
+https://nakaflow.io/feed.xml
+```
+
+#### Badge (SVG)
+
+`GET /embed/badge/{TOKEN}` returns a shields.io-style SVG. Color-coded: green (≥20), lime (≥10), yellow (≥5), red (<5). The `{TOKEN}` is case-insensitive — e.g. `SOL`, `ETH`, `ATOM`.
+
+Markdown:
+```markdown
+[![Nakamoto Coefficient](https://nakaflow.io/embed/badge/SOL)](https://nakaflow.io/?chain=SOL)
+```
+
+HTML:
+```html
+<a href="https://nakaflow.io/?chain=SOL">
+  <img src="https://nakaflow.io/embed/badge/SOL" alt="Solana Nakamoto Coefficient">
+</a>
+```
+
+#### Widget (iframe)
+
+`GET /embed/widget/{TOKEN}` returns a self-contained, dark-mode-aware HTML card suitable for embedding via `<iframe>`.
+
+```html
+<iframe
+  src="https://nakaflow.io/embed/widget/SOL"
+  width="360" height="140"
+  frameborder="0" loading="lazy"
+  title="Solana Nakamoto Coefficient"></iframe>
+```
+
+### Project layout
+
+```
+core/chains/    per-chain stake queries and coefficient math
+main.go         HTTP server and route wiring (Gin)
+db.go           SQLite history store
+feed.go         RSS rendering
+embed.go        SVG badge + iframe widget rendering
+docs.go         OpenAPI spec + Swagger UI
+```
+
+### Contributing
+
+To add a new chain:
+
+1. Add a file in `core/chains/` that implements a function returning `(int, error)`.
+2. Register the token in `core/chains/chain.go` — add to the `Token` constants, `ChainName()`, `Tokens`, and the `switch` in `newValues`.
+3. Add the chain name to the list above.
+
+PRs welcome.

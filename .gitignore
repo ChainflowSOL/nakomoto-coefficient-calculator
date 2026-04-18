@@ -5,3 +5,4 @@ web/public/
 main
 nakamoto-coefficient-calculator
 .env
+.claude

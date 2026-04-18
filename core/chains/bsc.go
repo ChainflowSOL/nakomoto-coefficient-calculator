@@ -7,9 +7,12 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"time"
 
 	utils "github.com/xenowits/nakamoto-coefficient-calculator/core/utils"
 )
+
+var bscClient = http11Client(20 * time.Second)
 
 type Request struct {
 	height   int
@@ -43,15 +46,33 @@ func BSC() (int, error) {
 	url := ""
 	for true {
 		url = fmt.Sprintf("https://api.bnbchain.org/bnb-staking/v1/validator/all?limit=%d&offset=%d", pageLimit, pageOffset)
-		resp, err := http.Get(url)
+		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
+			return 0, err
+		}
+		req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) Chainflow/nc-calc")
+
+		var resp *http.Response
+		for attempt := 0; attempt < 3; attempt++ {
+			resp, err = bscClient.Do(req)
+			if err == nil {
+				break
+			}
+			log.Printf("bsc: request attempt %d failed: %v", attempt+1, err)
+			time.Sleep(time.Duration(attempt+1) * 2 * time.Second)
+		}
+		if err != nil {
+			return 0, fmt.Errorf("bsc: request failed after retries: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
 			errBody, _ := ioutil.ReadAll(resp.Body)
 			var errResp BscErrorResponse
 			json.Unmarshal(errBody, &errResp)
-			log.Println(errResp.Error)
-			return 0, err
+			log.Printf("bsc: status %d: %s", resp.StatusCode, errResp.Error)
+			return 0, fmt.Errorf("bsc: status %d", resp.StatusCode)
 		}
-		defer resp.Body.Close()
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {

@@ -66,6 +66,10 @@ func Mina() (int, error) {
 			return 0, err
 		}
 
+		if resp.StatusCode != http.StatusOK {
+			return 0, fmt.Errorf("mina api returned status %d from %s: %s", resp.StatusCode, url, string(body[:min(len(body), 200)]))
+		}
+
 		var response MinaResponse
 		err = json.Unmarshal(body, &response)
 		if err != nil {

@@ -7,15 +7,17 @@ services:
 #  |___/\___|_|    \_/ \___|_|
 
   server:
-    image: xenowits/nc-calc:v0.1.1
+    image: kavyam02/nc-calc:v0.2.3
     environment:
       SOLANA_API_KEY: ${SOLANA_API_KEY}
+      RATED_API_KEY: ${RATED_API_KEY}
+      SUBSCAN_API_KEY: ${SUBSCAN_API_KEY}
     ports:
       - "8080:8080"
     networks: [nc]
     volumes:
-      - ${MOUNT_PATH}:/opt/xenowits
-    restart: on-failure
+      - nakaflow-data:/app/data
+    restart: unless-stopped
 
 #  __                 _                 _
 #  / _|_ __ ___  _ __ | |_ ___ _ __   __| |
@@ -24,13 +26,16 @@ services:
 #  |_| |_|  \___/|_| |_|\__\___|_| |_|\__,_|
 
   frontend:
-    image: xenowits/nakamoto-coefficient-frontend:v0.1.1
+    image: kavyam02/frontend_service:latest
     ports:
       - "3000:3000"
     environment:
       SERVER_URL: http://server:8080
     networks: [nc]
-    restart: on-failure
+    restart: unless-stopped
 
 networks:
   nc:
+
+volumes:
+  nakaflow-data:
