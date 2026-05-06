@@ -23,7 +23,7 @@ The same 33% threshold is applied to every chain. Some chains use different cons
 
 ### Supported chains
 
-Agoric · Algorand · Aptos · Avail · Avalanche · Base · BNB Smart Chain · Cardano · Celestia · Cosmos · Ethereum · Graph Protocol · Hedera · Hype · Juno · Mina · Monad · MultiversX · Namada · Nano · Near · Osmosis · Plume · Polkadot · Polygon · Pulsechain · Regen · Sei · Solana · Stargaze · Story · Sui · Thorchain
+Agoric · Algorand · Aptos · Avail · Avalanche · Base · BNB Smart Chain · Cardano · Celestia · Cosmos · Ethereum · Graph Protocol · Hedera · Hype · Juno · Mina · Monad · MultiversX · Namada · Nano · Near · Nimiq · Osmosis · Plume · Polkadot · Polygon · Pulsechain · Regen · Sei · Solana · Stargaze · Story · Sui · Thorchain
 
 ### Running locally
 
