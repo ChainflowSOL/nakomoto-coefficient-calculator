@@ -29,7 +29,7 @@ type ThorchainErrorResponse struct {
 
 func Thorchain() (int, error) {
 	votingPowers := make([]big.Int, 0, 1000)
-	url := fmt.Sprintf("https://thornode.ninerealms.com/thorchain/nodes")
+	url := fmt.Sprintf("https://thornode.thorchain.liquify.com/thorchain/nodes")
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelFunc()
 
