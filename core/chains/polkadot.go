@@ -116,7 +116,7 @@ func fetchPolkadotValidators() ([]polkadotValidator, error) {
 			`{"order":"desc","order_field":"bonded_total","row":100,"page":%d,"key":"validator"}`, page,
 		)))
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://polkadot.api.subscan.io/api/scan/staking/validators", payload)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://assethub-polkadot.api.subscan.io/api/scan/staking/validators", payload)
 		if err != nil {
 			cancel()
 			return nil, errors.New("create post request for polkadot")
