@@ -159,10 +159,10 @@ func normalizeEntityName(name string) string {
 		return "Everstake"
 	}
 	if strings.Contains(lower, "chorus") && strings.Contains(lower, "one") {
-		return "Bitwise Onchain Solutions" // Chorus One acquired by Bitwise (Feb 2026)
+		return "Helius / Bitwise" // Chorus One acquired by Bitwise (Feb 2026); operated by Helius
 	}
 	if strings.Contains(lower, "chorusone") {
-		return "Bitwise Onchain Solutions" // Chorus One acquired by Bitwise (Feb 2026)
+		return "Helius / Bitwise" // Chorus One acquired by Bitwise (Feb 2026); operated by Helius
 	}
 	if strings.Contains(lower, "p2p") && (strings.Contains(lower, "validator") || strings.Contains(lower, "staking") || strings.Contains(lower, ".org")) {
 		return "P2P Validator"
@@ -191,7 +191,7 @@ func normalizeEntityName(name string) string {
 
 	// --- Solana ecosystem entities ---
 	if strings.Contains(lower, "helius") {
-		return "Helius"
+		return "Helius / Bitwise" // Helius operates Chorus One & Bitwise validators
 	}
 	if strings.Contains(lower, "jupiter") || strings.Contains(lower, "jup.ag") {
 		return "Jupiter"
@@ -217,7 +217,7 @@ func normalizeEntityName(name string) string {
 		return "Galaxy"
 	}
 	if strings.Contains(lower, "bitwise") {
-		return "Bitwise Onchain Solutions"
+		return "Helius / Bitwise" // Helius operates Chorus One & Bitwise validators
 	}
 	if strings.Contains(lower, "sol strategies") || strings.Contains(lower, "solstrategies") {
 		return "Sol Strategies"
